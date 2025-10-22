@@ -1,9 +1,8 @@
-%%writefile app.py
 # --- GEREKLİ KÜTÜPHANELERİ İÇE AKTAR ---
 import os
 import re
-import streamlit as st
 import requests
+import gradio as gr # Streamlit yerine Gradio eklendi
 from dotenv import load_dotenv
 
 # LangChain/Gemini Bağımlılıkları
@@ -16,32 +15,29 @@ from langchain_community.vectorstores import Chroma
 # --- RAG SİSTEMİ KURULUMU (TEK SEFERLİK ÇALIŞTIRILIR) ---
 
 # 1️⃣ API Anahtarı ve LLM Kurulumu
-# .env dosyasını yerel olarak yükler (Streamlit Cloud'da çalışmaz, orada Secrets kullanılır)
 load_dotenv()
 GOOGLE_API_KEY_VALUE = os.getenv("GOOGLE_API_KEY")
 
 if not GOOGLE_API_KEY_VALUE:
-    st.error("❌ GOOGLE_API_KEY ortam değişkeni bulunamadı. Lütfen Streamlit Secrets veya .env dosyanızı kontrol edin.")
-    st.stop()
+    # Streamlit komutu yerine Python Exception kullanıldı.
+    raise Exception("❌ GOOGLE_API_KEY ortam değişkeni bulunamadı. Lütfen Hugging Face Secrets ayarını kontrol edin.")
 
 # LLM ve Embedding modelini başlat
-@st.cache_resource
+# Streamlit dekoratörleri kaldırıldı, fonksiyonlar standart Python fonksiyonu olarak bırakıldı.
 def setup_llm_and_embeddings():
-    """LLM ve Embedding modellerini Streamlit'in hafızasında önbelleğe alır."""
-    # LLM (Gemini-2.5-flash)
+    """LLM ve Embedding modellerini başlatır."""
     llm = ChatGoogleGenerativeAI(
         model="models/gemini-2.5-flash",
         temperature=0.3, # KOD 5'teki 0.3'e uyarlanmıştır.
         convert_system_message_to_human=True
     )
-    # Embedding Model (text-embedding-004)
     embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
     return llm, embeddings
 
 llm, embeddings = setup_llm_and_embeddings()
 
 # 2️⃣ Veri Seti Yükleme ve Parçalama (KOD HÜCRESİ 3)
-@st.cache_resource
+# Streamlit komutları kaldırıldı.
 def load_and_chunk_data():
     """Veri setini indirir ve tariflere ayırır."""
     data_path = "datav3.txt"
@@ -49,17 +45,16 @@ def load_and_chunk_data():
     
     # Dosya indirme (sadece yoksa)
     if not os.path.exists(data_path):
-        st.info("🌐 Veri seti Hugging Face'ten indiriliyor...")
+        print("🌐 Veri seti Hugging Face'ten indiriliyor...") # st.info yerine print
         try:
             r = requests.get(hf_url, stream=True)
             r.raise_for_status() # HTTP hatası varsa istisna fırlat
             with open(data_path, "wb") as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
-            st.success("✅ Veri seti başarıyla indirildi!")
+            print("✅ Veri seti başarıyla indirildi!") # st.success yerine print
         except Exception as e:
-            st.error(f"❌ Veri seti indirilemedi: {e}")
-            st.stop()
+            raise Exception(f"❌ Veri seti indirilemedi: {e}") # st.error ve st.stop yerine raise Exception
 
     # Dosyayı oku ve tariflere ayır
     with open(data_path, "r", encoding="utf-8") as f:
@@ -67,7 +62,6 @@ def load_and_chunk_data():
 
     documents = []
     current_recipe = ""
-
     for line in lines:
         if re.search(r"nasıl yapılır\?", line, re.IGNORECASE):
             if current_recipe.strip():
@@ -75,38 +69,32 @@ def load_and_chunk_data():
             current_recipe = line
         else:
             current_recipe += line
-
     if current_recipe.strip():
         documents.append(Document(page_content=current_recipe.strip()))
-    
-    st.success(f"✅ Toplam {len(documents)} tarif yüklendi ve ayrıştırıldı.")
+        print(f"✅ Toplam {len(documents)} tarif yüklendi ve ayrıştırıldı.") # st.success yerine print
     return documents
 
 texts = load_and_chunk_data()
 
 # 3️⃣ Vektör Veritabanı (Chroma DB) ve Retriever Kurulumu (KOD HÜCRESİ 4)
-# Streamlit uygulaması her başladığında DB'yi yeniden oluşturmak pahalıdır.
-# Bu nedenle `st.cache_resource` ile önbelleğe alınır.
-@st.cache_resource
-def setup_vectorstore(texts, embeddings):
+# Streamlit dekoratörleri ve komutları kaldırıldı.
+def setup_vectorstore(_texts, _embeddings): # Hata çözümü için _texts ve _embeddings kullanıldı.
     """Chroma DB'yi oluşturur veya yükler ve Retriever'ı başlatır."""
-    db_dir = "db_writeable" # Streamlit Cloud'da bu dizin kalıcı olmaz
+    db_dir = "db_writeable" 
     
     # Chroma DB oluştur
-    with st.spinner("⏳ Yeni Chroma veritabanı oluşturuluyor..."):
-        db = Chroma.from_documents(texts, embeddings, persist_directory=db_dir)
-        # db.persist() # Streamlit Cloud'da persist işe yaramaz
-        retriever = db.as_retriever(search_kwargs={"k": 12})
-        st.success(f"✅ Chroma DB başarıyla oluşturuldu! Toplam belge sayısı: {db._collection.count()}")
+    print("⏳ Yeni Chroma veritabanı oluşturuluyor...") # st.spinner yerine print
+    db = Chroma.from_documents(_texts, _embeddings, persist_directory=db_dir) # Hata çözümü için _texts, _embeddings kullanıldı.
+    retriever = db.as_retriever(search_kwargs={"k": 12})
+    print(f"✅ Chroma DB başarıyla oluşturuldu! Toplam belge sayısı: {db._collection.count()}") # st.success yerine print
     return retriever
 
 retriever = setup_vectorstore(texts, embeddings)
 
-# 4️⃣ RAG Zinciri Kurulumu (KOD HÜCRESİ 5)
+# 4️⃣ RAG Zinciri Kurulumu (KOD HÜCRESİ 5) - TAMAMEN KORUNMUŞTUR
 
 # Prompt: veri varsa düzenle, yoksa AI tarif üret
 template = """Aşağıda yemek veri setinden getirilen 'Bağlam' metni bulunmaktadır.
-
 🟢 Eğer 'Bağlam' boş **değilse**:
 Sadece biçimlendir — yeni bilgi ekleme, çıkarma veya değiştirme YASAKTIR.
 Bağlamı temiz bir yemek tarifi biçiminde (Başlık, Malzemeler, Yapılışı) sun.
@@ -115,24 +103,20 @@ Bu metni düzenli biçimde yaz:
 - Orijinal cümleleri kesinlikle koru.
 - Metni **madde madde** (1., 2., 3. şeklinde) yaz.
 - Yeni bilgi ekleme, çıkarma veya değiştirme YASAKTIR.
-
 🔵 Eğer 'Bağlam' **boşsa**:
 Bu yemeğin adıyla uyumlu, mantıklı bir tarif oluştur.
 (Başlık, Malzemeler, Yapılışı başlıklarıyla yaz.)
 Cümlenin sonunda şunu ekle:
 "(Bu tarif AI tarafından oluşturulmuştur.)"
-
 ---
 Sorgu: {input}
-
 Bağlam:
-{context}
-"""
+{context}"""
 
 prompt = PromptTemplate.from_template(template)
 document_chain = create_stuff_documents_chain(llm, prompt)
 
-# 5️⃣ Hibrit RAG Fonksiyonu
+# 5️⃣ Hibrit RAG Fonksiyonu - TAMAMEN KORUNMUŞTUR
 def pure_rag(query: str):
     """Veri setinden tarif arar, bulamazsa AI'ya oluşturur."""
     
@@ -140,11 +124,11 @@ def pure_rag(query: str):
     normalized_query = query.strip().lower()
     normalized_query = re.sub(r"tarifi nedir\??", "nasıl yapılır?", normalized_query)
     normalized_query = re.sub(r"tarifi", "nasıl yapılır", normalized_query)
-
+    
     # Veri tabanında arama
     results = retriever.get_relevant_documents(normalized_query)
     context = "\n\n".join([d.page_content for d in results if d.page_content.strip()])
-
+    
     # Alternatif sorgular (KOD 5'teki yedekleme)
     if not context.strip():
         alt_forms = [
@@ -160,75 +144,120 @@ def pure_rag(query: str):
                 context = "\n\n".join([d.page_content for d in alt_results if d.page_content.strip()])
                 if context.strip():
                     break
-    
+        
     if not context.strip():
         context = ""
-
+        
     # Gemini’ye gönder
     docs = [Document(page_content=context)]
     response = document_chain.invoke({"input": query, "context": docs})
     return response
 
-# --- STREAMLIT ARAYÜZ KODU (KOD HÜCRESİ 6) ---
+# --- GRADIO ARAYÜZÜ (GÖRÜNÜM İYİLEŞTİRMELERİ VE CSS) ---
 
-st.set_page_config(
-    page_title="Türk Kültürel Yemek Asistanı",
-    page_icon="🍲",
-    layout="wide"
-)
+custom_css = """
+@import url('https://fonts.googleapis.com/css2?family=Marcellus&display=swap');
 
-# 💠 Sayfa Arka Planı ve Stil
-st.markdown("""
-<style>
-/* CSS kodları burada kalabilir, Streamlit bileşenlerini stilize eder. */
-.main {
-    background: rgba(255, 255, 255, 0.9);
-    padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+/* ============================================================
+   1. ARKA PLAN
+   ============================================================ */
+html, body {
+    background: linear-gradient(
+        rgba(255, 248, 225, 0.75),
+        rgba(255, 248, 225, 0.75)
+    ), url('https://huggingface.co/spaces/glcClk/turk-yemek-asistani/resolve/main/background.jpg')
+       no-repeat center center fixed !important;
+    background-size: cover !important;
+    font-family: 'Marcellus', serif !important;
+}
+
+/* ============================================================
+   2. GENEL METİN STİLİ
+   ============================================================ */
+h1, p, label, textarea, input {
+    color: #2C2A2A !important;
+    font-family: 'Marcellus', serif !important;
 }
 h1 {
-    text-align: center;
-    color: darkred;
+    color: #8B0000 !important;
+    font-size: 2.8em !important;
+    text-shadow: 1px 1px 2px #FAD7A0;
 }
-.stButton button {
-    background-color: darkred !important;
+
+/* ============================================================
+   3. GİRİŞ KUTUSU (sol)
+   ============================================================ */
+textarea, input {
+    background-color: #FFF8DC !important;
+    border: 2px solid #C0392B !important;
+    border-radius: 10px !important;
+    color: #2C2A2A !important;
+}
+
+/* ============================================================
+   4. TARİF KUTUSU (sağ)
+   ============================================================ */
+.output-markdown, [class*="output"] {
+    background-color: rgba(213, 232, 184, 0.94) !important;  /* yağ yeşili */
+    backdrop-filter: blur(4px);
+    border: 3px solid #7D6608 !important;
+    border-radius: 15px !important;
+    color: #0B1E3D !important;
+    padding: 24px !important;
+    line-height: 1.7em !important;
+    font-size: 1.08em !important;
+    font-weight: 500 !important;
+    box-shadow: 0 0 15px rgba(0,0,0,0.25);
+    overflow-y: auto !important;
+}
+
+/* Tüm markdown içerikleri için siyah renk garantisi */
+.output-markdown *, [class*="output"] * {
+    color: #0B1E3D !important;
+    text-shadow: none !important;
+}
+
+/* ============================================================
+   5. BUTONLAR
+   ============================================================ */
+button.primary {
+    background-color: #C0392B !important;
     color: white !important;
-    border-radius: 10px;
-    padding: 0.6em 1.5em;
-    font-size: 1em;
+    border-radius: 10px !important;
+    font-weight: bold !important;
 }
-.stButton button:hover {
-    background-color: #a30000 !important;
+button.primary:hover {
+    background-color: #922B21 !important;
 }
-</style>
-""", unsafe_allow_html=True)
+button.secondary {
+    background-color: #D7CCC8 !important;
+    color: #2C2C2C !important;
+    border-radius: 10px !important;
+    font-weight: bold !important;
+}
+button.secondary:hover {
+    background-color: #BCAAA4 !important;
+}
+"""
 
-# 💬 Başlık
-st.title("🇹🇷 Türk Kültürel Yemek Asistanı")
-st.markdown("""
-### 🍽️ Merhaba!
-Türk mutfağının benzersiz tatlarını keşfetmeye hazır mısın?  
-Aşağıya bir yemek adı yaz, birlikte tarifine bakalım! 👇
-""")
+# ... (iface = gr.Interface(...)
 
-# 💡 Kullanıcı girişi
-query = st.text_input("Bir yemek adı gir (örnek: Tire Şiş Köfte, Karnabahar Pizza, Mercimek Çorbası):")
+iface = gr.Interface(
+    fn=pure_rag,
+    inputs=gr.Textbox(
+        lines=2, 
+        label="Hadi bana çocukluğundan belki de özlediğin bir yemek söyle:", 
+        placeholder="Örnek: Hatay Kağıt Kebabı, Sodalı Köfte, İç Pilavlı Kaburga Dolması, Yeşil Mercimekli Semizotu Yemeği"
+    ),
+    outputs=gr.Markdown(label="🍴 Tarif Sonucu"),
+    title="Türk Kültürel Yemek Asistanı 🍲", 
+    description="Türk mutfağının benzersiz tatlarını keşfetmeye hazır mısın? Aşağıya bir yemek adı yaz, birlikte tarifine bakalım! Ayrıca tabiki bana tüm yemekleri sorabilirsin.",
+    theme=gr.themes.Soft(primary_hue="red").set(body_background_fill="#FFF8E1"),
+    css=custom_css,
+    submit_btn="Tarifi Hazırla", 
+    clear_btn="Temizle"
+)
 
-# 🍳 Buton
-if st.button("Tarifi Getir"):
-    if not query.strip():
-        st.warning("⚠️ Lütfen bir yemek adı gir.")
-    else:
-        # Arka plan kodunun çalıştığından emin olmak için bu blok eklendi
-        if 'retriever' not in locals() or 'llm' not in locals():
-            st.error("⚠️ Sistem bileşenleri tam yüklenemedi. Lütfen sayfayı yenilemeyi deneyin.")
-        else:
-            with st.spinner("Tarif aranıyor..."):
-                try:
-                    # pure_rag çağrısı, artık tüm bağımlılıklar app.py içinde tanımlı
-                    answer = pure_rag(query)
-                    st.success("🍴 Tarif hazır!")
-                    st.markdown(answer)
-                except Exception as e:
-                    st.error(f"Bir hata oluştu: {e}")
+if __name__ == "__main__":
+    iface.launch(share=False)
+    
