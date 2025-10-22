@@ -113,6 +113,7 @@ Ardından bu belgeler, **Google Embeddings (text-embedding-004)** modeliyle vekt
 [![Hugging Face Space](https://img.shields.io/badge/Live%20Demo-Hugging%20Face%20Spaces-orange?logo=huggingface)](https://huggingface.co/spaces/glcClk/turk-yemek-asistani)
 
 ## 📘 Örnek Kullanım 
+Tarif kısmında yazı renginde istenmeyen hatalar alınmıştır bu sebeple yazı rengi böyledir. Üzerinde çalışmaya devam edeceğim.
 Kullanım Adımları:
 “Hadi bana çocukluğundan belki de özlediğin bir yemek söyle” kutusuna bir yemek adı yazın.
 Örnek: Hatay Kağıt Kebabı, Yeşil Mercimekli Semizotu Yemeği, İç Pilavlı Kaburga Dolması, Sodalı Köfte
