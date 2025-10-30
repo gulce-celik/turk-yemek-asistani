@@ -1,15 +1,3 @@
----
-title: Turk Yemek Asistani
-emoji: 👁
-colorFrom: pink
-colorTo: gray
-sdk: gradio
-sdk_version: 5.49.1
-app_file: app.py
-pinned: false
-short_description: Türk yemek kültürünü dijital dünyaya taşıyan yapay zekâ dest
----
-
 # Türk Kültürel Yemek Asistanı 🍲  
 ### “Türk mutfağının kültürel dokusunu koruyan büyüklerimizin tarifleriyle yapay zekâ destekli dijital tarif asistanı”
 
