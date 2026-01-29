@@ -129,14 +129,14 @@ source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 ### 2️⃣ Ortam değişkeni oluşturma
-# Proje dizinine .env dosyası oluşturun ve içine:
-# GOOGLE_API_KEY=your_api_key_here
+Proje dizinine .env dosyası oluşturun ve içine:
+GOOGLE_API_KEY=your_api_key_here
 
 ### 3️⃣ Uygulamayı başlatma
 python app.py
 
 ### 4️⃣ Çalışma sonrası
-# Gradio arayüzü otomatik olarak tarayıcıda açılacaktır.
+Gradio arayüzü otomatik olarak tarayıcıda açılacaktır.
 
 
 ### 📸 Ekran Görüntüleri
