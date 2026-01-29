@@ -121,21 +121,21 @@ Eğer bir gecikme yaşanırsa lütfen tekrar "Tarifi Hazırla" butonuna tıklay�
 
 ### 💻 Kurulum ve Çalıştırma Kılavuzu
 
-# 1️⃣ Gerekli kütüphanelerin kurulumu
+### 1️⃣ Gerekli kütüphanelerin kurulumu
 git clone https://github.com/glcClk/turk-yemek-asistani.git
 cd turk-yemek-asistani
 python -m venv venv
 source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# 2️⃣ Ortam değişkeni oluşturma
+### 2️⃣ Ortam değişkeni oluşturma
 # Proje dizinine .env dosyası oluşturun ve içine:
 # GOOGLE_API_KEY=your_api_key_here
 
-# 3️⃣ Uygulamayı başlatma
+### 3️⃣ Uygulamayı başlatma
 python app.py
 
-# 4️⃣ Çalışma sonrası
+### 4️⃣ Çalışma sonrası
 # Gradio arayüzü otomatik olarak tarayıcıda açılacaktır.
 
 
